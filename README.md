@@ -1,0 +1,1 @@
+This Repo Documents my learning Terraform. Documentation for each week is in the [Journal Directory](./journal/)
