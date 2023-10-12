@@ -239,11 +239,14 @@ A Dynamo DB table will also be created, why?
 
 Well, imagine you are working as a part of a team using github as the SCM of choice where all the project files are stored and the statefile of the project is in a s3 bucket, you need to enable state locking, Dynamo DB does this.
 
-if member A is doing terraform apply from his end and member B is doing terraform plan from her end there will be a collsion, to avoid this when one member is running terraform plan there should be a lock on the statefile and member B will not be allowed to modify the statefile until member A is done. 
+For many projects Terraform auto-deploys from the SCM, so if there's any push to the SCM, it takes the statefile and auto-deploys it.
 
-If member B will first run `terraform state pull` to get the latest version of the statefile before modifying it
+If member A is working on his end and pushes to the project Repo, while terraform plans and auto-deploys the resoures in the updated statefile there should be a lock on the repo so that member B on his end or any other member of the team cannot push to the same repo(thus modifying the statefile) until terraform applies the changes from member A. 
 
 we use a central DynamoDB table to manage state locking thus ensuring that only one user or process is modifying the state file at any given time, preventing conflicts and ensuring consistency.
+Member B on his end must first run `terraform state pull` to get the latest version of the statefile before modifying and pushing his update to the project repo.
+
+
 
 **You will implemnent migrating your backend from your local workspace to a remote s3 bucket with state lock enabled.**
 
