@@ -229,16 +229,233 @@ Both instances will be imported and mapped into the resources; website_bucket an
 
 ## Backend
 
+[Terraform Backend](https://developer.hashicorp.com/terraform/language/settings/backends/s3)
+
 The backend i.e your statefile can be stored in terraform cloud or in s3 bucket, this is in case your local env crashes you will not lose your statefile or in scenarios where you are part of a team and everyone in the team will need the updated statefile.
 
 For now we will store our backend in s3 bucket.
 
 A Dynamo DB table will also be created, why?
 
-Well, imagine you are working as a part of a team and the statefile of the project is in a s3 bucket, you need to enable state locking, Dynamo DB does this.
+Well, imagine you are working as a part of a team using github as the SCM of choice where all the project files are stored and the statefile of the project is in a s3 bucket, you need to enable state locking, Dynamo DB does this.
 
-if member A is doing terraform apply and member B is doing terraform plan there will be a collsion, to avoid this when one member is running terraform plan there should be a lock on the statefile and member B will not be allowed to modify it until member A is done. 
+if member A is doing terraform apply from his end and member B is doing terraform plan from her end there will be a collsion, to avoid this when one member is running terraform plan there should be a lock on the statefile and member B will not be allowed to modify the statefile until member A is done. 
+
+If member B will first run `terraform state pull` to get the latest version of the statefile before modifying it
 
 we use a central DynamoDB table to manage state locking thus ensuring that only one user or process is modifying the state file at any given time, preventing conflicts and ensuring consistency.
 
-`terraform init -lock=false` when initializing the backend
+**You will implemnent migrating your backend from your local workspace to a remote s3 bucket with state lock enabled.**
+
+To do this:
+
+#### First create the s3 bucket and a dynamo DB table where the statefile will be stored
+
+```
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_s3_bucket" "my_s3" {
+  bucket = "a1citybnaksjksajijweklidal112"
+
+  tags = {
+    Name = "local_state_bucket"
+
+  }
+}
+
+resource "aws_s3_bucket_versioning" "versioning_example" {
+  bucket = aws_s3_bucket.my_s3.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+```
+
+```
+resource "aws_dynamodb_table" "basic-dynamodb-table-papi" {
+  name         = "GameScores"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+
+
+
+
+  tags = {
+    Name = "basic-dynamodb-table-papi"
+  }
+}
+```
+#### Next create an ec2 instance to create the local statefile which will be migrated. This statefile will be migrated to the s3 bucket.
+
+```
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-053b0d53c279acc90"
+  instance_type = "t2.micro"
+}
+```
+#### Next create a `backend.tf`. The configuration tells terraform to migrate the statefile to the s3 bucket specified and use it onwards with a key lock enabled
+
+```
+terraform {
+  backend "s3" {
+    # Replace this with your bucket name!
+    bucket = "a1citybnaksjksajijweklidal112"
+    key    = "global/s3/terraform.tfstate"
+    region = "us-east-1"
+
+    # Replace this with your DynamoDB table name!
+    dynamodb_table = "GameScores"
+    encrypt        = true
+  }
+}
+```
+
+Run `terraform init` to re-initialize the backend. You should get the output below
+
+```
+Initializing the backend...
+Acquiring state lock. This may take a few moments...
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to the
+  newly configured "s3" backend. No existing state was found in the newly
+  configured "s3" backend. Do you want to copy this state to the new "s3"
+  backend? Enter "yes" to copy and "no" to start with an empty state.
+
+  Enter a value: 
+```
+
+Answer the prompt with `yes` to initialize the backend. The output below:
+
+```
+
+Releasing state lock. This may take a few moments...
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v5.19.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+```
+
+#### You just successfully migrated a statefile from local to s3 bucket
+
+## Remote exec
+
+Say you want to create an instance and run some commands on the instance, remote exec will do this just fine. example is the code below that creates an instance, copy your public key to the instance to allow connection and installs some packages on the instance
+
+```
+provider "aws" {
+  profile = "default"
+  region  = "us-east-1"
+}
+
+resource "aws_key_pair" "example" {
+  key_name   = "examplekey"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+resource "aws_instance" "example" {
+  key_name      = aws_key_pair.example.key_name
+  ami           = "ami-0b5eea76982371e91"
+  instance_type = "t2.micro"
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("~/.ssh/id_rsa")
+    host        = self.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo amazon-linux-extras enable nginx1.12",
+      "sudo yum -y install nginx",
+      "sudo systemctl start nginx"
+    ]
+  }
+}
+```
+## File Provisioners
+
+Provisioners allow you to execute commands on compute instances, say you want to do something like invalidate cache, terraform doesn't have a particular provision for this, a workaround is to find a way to execute the command locally on your server to invalidate cache or remotely. Provisioners allow you to do this, they allow you execute commands on your AWS CLI. 
+
+Thus the remote-exec used above is a provisioner.
+
+A case where the **local-exec provisioner** was used to invalidate cash can be seen [here](https://github.com/NyerhovwoOnitcha/terraform-beginner-bootcamp-2023/blob/main/journal/week1.md#provisioners) 
+
+In this scenario today, we will use both the **remote-exec provisioner** and **file provisioner**
+
+**The code creates an AWS instance, the path to the public key on your pc is specified and used to create the *aws_key_pair resource*. This key is specified when creating the instance to enable you ssh into the instance from your pc**
+
+The connection block specifies the ssh connection
+
+The **remote-exec (Provisioner)block** installs httpd
+
+The **file Provisioner block** copies an index.html file from your local pc to the webservers root dir.
+
+- **NOTE**- Your will observe that in this scenario the provisioner is part of a resource, a provisioner may be part of a resource, an example is seen [here](https://github.com/NyerhovwoOnitcha/terraform-beginner-bootcamp-2023/blob/main/journal/week1.md#provisioners) where the provisioner is a standalone resource that is trigerred by something.
+
+
+```
+provider "aws" {
+  profile = "default"
+  region  = "us-east-1"
+}
+
+resource "aws_key_pair" "example" {
+  key_name   = "examplekey"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+resource "aws_instance" "example" {
+  key_name      = aws_key_pair.example.key_name
+  ami           = "ami-0b5eea76982371e91"
+  instance_type = "t2.micro"
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("~/.ssh/id_rsa")
+    host        = self.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo amazon-linux-extras install epel -y",
+      "sudo yum install httpd -y",
+      "sudo chmod -Rf 777 /var/www/html",
+      "sudo systemctl enable httpd",
+      "sudo systemctl start httpd"
+
+    ]
+  }
+  provisioner "file" {
+    source      = "index.html"
+    destination = "/var/www/html/index.html"
+  }
+
+}
+```

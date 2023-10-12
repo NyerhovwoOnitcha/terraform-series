@@ -1,6 +1,19 @@
-provider "aws" {
-  region = "us-east-1"
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "5.19.0"
+    }
+  }
 }
+
+provider "aws" {
+  # Configuration options
+}
+
+# provider "aws" {
+#   region = "us-east-1"
+# }
 
 resource "aws_s3_bucket" "my_s3" {
   bucket = "a1citybnaksjksajijweklidal112"
