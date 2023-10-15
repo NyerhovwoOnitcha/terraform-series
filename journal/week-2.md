@@ -248,6 +248,8 @@ Member B on his end must first run `terraform state pull` to get the latest vers
 
 
 
+
+
 **You will implemnent migrating your backend from your local workspace to a remote s3 bucket with state lock enabled.**
 
 To do this:
@@ -462,3 +464,35 @@ resource "aws_instance" "example" {
 
 }
 ```
+
+### TFVARS/ Precedence of Variables 
+
+Terraform applies variables in the following order of precedence
+
+- 1: 
+
+Any `-var and -var file` options specified on the command line
+
+  Here you manually specify the variable file e.g
+
+    `terraform plan -var-file="dev.tfvars"` 
+
+    `terraform apply -var-file="dev.tfvars"` 
+
+    `terraform destroy -var-file="dev.tfvars"`
+
+- 2:
+
+Any `*.auto.tfvars or *.auto.tfvars.json files` processed in their lexical order of their filenames
+
+- 3:
+
+`terraform.tfvars.json` file
+
+- 4:
+
+`terraform.tfvars` file
+
+- 5:
+
+Environmental variables
