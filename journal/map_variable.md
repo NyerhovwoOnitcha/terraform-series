@@ -1,3 +1,12 @@
+- [Week 1: Lists and Map Variables](#week-1--lists-and-map-variables)
+  * [Map Variable](#map-variable)
+  * [02 Map Variable: Combinig `for each` and `map variables`](#02-map-variable--combinig--for-each--and--map-variables-)
+  * [List Variable](#list-variable)
+
+
+
+
+
 # Week 1: Lists and Map Variables
 
 ## Map Variable

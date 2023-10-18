@@ -1,3 +1,30 @@
+- [Week 2:](#week-2-)
+  * [Datasources](#datasources)
+    + [Creating multiple subnets](#creating-multiple-subnets)
+    + [Retrieving already created images IDs from your AWS account using the data resource](#retrieving-already-created-images-ids-from-your-aws-account-using-the--data-resource-)
+  * [STATEFILE REFRESH](#statefile-refresh)
+  * [Terraform Import](#terraform-import)
+  * [Backend](#backend)
+      - [First create the s3 bucket and a dynamo DB table where the statefile will be stored](#first-create-the-s3-bucket-and-a-dynamo-db-table-where-the-statefile-will-be-stored)
+      - [Next create an ec2 instance to create the local statefile which will be migrated. This statefile will be migrated to the s3 bucket.](#next-create-an-ec2-instance-to-create-the-local-statefile-which-will-be-migrated-this-statefile-will-be-migrated-to-the-s3-bucket)
+      - [Next create a `backend.tf`. The configuration tells terraform to migrate the statefile to the s3 bucket specified and use it onwards with a key lock enabled](#next-create-a--backendtf--the-configuration-tells-terraform-to-migrate-the-statefile-to-the-s3-bucket-specified-and-use-it-onwards-with-a-key-lock-enabled)
+      - [You just successfully migrated a statefile from local to s3 bucket](#you-just-successfully-migrated-a-statefile-from-local-to-s3-bucket)
+  * [Remote exec](#remote-exec)
+  * [File Provisioners](#file-provisioners)
+    + [TFVARS/ Precedence of Variables](#tfvars--precedence-of-variables)
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Week 2: 
 - **Datasources**
 - **Statefile Refresh**
@@ -105,7 +132,7 @@ output "private_subnet1" {
 }
 ```
 
-### Retrieving already created images IDs from your AWS account using the `data resource`
+### Retrieving already created images IDs from your AWS account using the data resource
 
 The code below allows you retrieve the a specific AMI from your aws account using filters/conditions specified to narrow down the options.
 
