@@ -1,3 +1,19 @@
+- [Week 4:](#week-4-)
+  * [S3 Bucket static Website hosting Module](#s3-bucket-static-website-hosting-module)
+    + [PutBucketPolicy](#putbucketpolicy)
+    + [Set Bucket Ownership and make allow Public access to the Bucket](#set-bucket-ownership-and-make-allow-public-access-to-the-bucket)
+    + [Update ACL of objects in s3 buckets for public read Access](#update-acl-of-objects-in-s3-buckets-for-public-read-access)
+    + [For Each Loop with Local exec](#for-each-loop-with-local-exec)
+  * [Application Load Balancer Module](#application-load-balancer-module)
+  * [Nginx](#nginx)
+  * [Lambda](#lambda)
+    + [Lambda_aws_start](#lambda-aws-start)
+    + [Cron expressions for your cloudwatch](#cron-expressions-for-your-cloudwatch)
+    + [Lambda_aws_stop](#lambda-aws-stop)
+    + [aws ec2 tag mails](#aws-ec2-tag-mails)
+
+
+
 # Week 4: 
 - **S3 Bucket static Website hosting Module**
 - **Application Load Balancer Module**
