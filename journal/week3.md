@@ -1,10 +1,16 @@
 # Week 3: 
+- **Modules**
+- **Vpc Module (mini_project1)**
+- **EC2 module (mini_project1)**
+- **Using Module in multi environment**
+- **Multi Folder Module**
+
 ## Modules
 
 Module is basically refactoring your files to make them reusable in an efficient way. e.g instaed of just writing terraform code to create a VPC you can create a module that creates VPC, this module can be reused anytime by anyone. The best part is you can override the variables.
 
 ### VPC module
-The mini_project1 dir contains the modules dir. Different modules can be kept in this modules dir. The first is the VPC module that contains code to create a vpc in it's main.tf file as well as a variable.tf file and an output.tf file.
+The `mini_project1` dir contains the modules dir. Different modules can be kept in this modules dir. The first is the VPC module that contains code to create a vpc in it's main.tf file as well as a variable.tf file and an output.tf file.
 
 This VPC module is called in the project root's main.tf and output.tf file to create a vpc
 
@@ -60,21 +66,8 @@ You will observe that for each environment's variables are passed when the  modu
 
 In the VPC module the `vpc_cidr and subnet block variable` are left blank, this is because we will manully pass them when we call the module in the dev environment or any other environment.
 
-In the instance Module the `subnet id variable` is left blank also, we want the instance to be created in the VPC and the subnet created by the `vpc module` and not the default in the default vpc and a default subnet. 
-
-`module.my_vpc.public subnet` traces to the output.tf file of the vpc module. The content of the `output.tf` file is 
+**In the instance Module the `subnet id variable` is left blank also, we want the instance to be created in the VPC and the subnet created by the `vpc module` and not the default in the default vpc and a default subnet. This is important as it enables us create instance in our preferred VPC and subnet**
 
 
-```
-output "vpc_id" {
+`module.my_vpc.public subnet` traces to the `public_subnet resource` of the vpc module. 
 
-  value = aws_vpc.vijayprod.id
-}
-
-output "public_subnet" {
-
-  value = aws_subnet.public_subnet.id
-}
-```
-
-This returns the subnet id that the instance will be created in
